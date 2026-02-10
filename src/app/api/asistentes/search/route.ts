@@ -22,8 +22,12 @@ export async function GET(req: NextRequest) {
             }));
 
         return NextResponse.json(matches);
-    } catch (error) {
+    } catch (error: any) {
         console.error("Search Error:", error);
-        return NextResponse.json({ error: "Error searching" }, { status: 500 });
+        return NextResponse.json({
+            error: "Error searching",
+            details: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined
+        }, { status: 500 });
     }
 }

@@ -3,11 +3,33 @@ import { google } from "googleapis";
 const SCOPES = ["https://www.googleapis.com/auth/spreadsheets"];
 
 const GOOGLE_SHEETS_CLIENT_EMAIL = process.env.GOOGLE_SHEETS_CLIENT_EMAIL;
-const GOOGLE_SHEETS_PRIVATE_KEY = process.env.GOOGLE_SHEETS_PRIVATE_KEY?.replace(/\\n/g, "\n");
+
+// Robust Private Key Parsing
+const GOOGLE_SHEETS_PRIVATE_KEY = (() => {
+    let key = process.env.GOOGLE_SHEETS_PRIVATE_KEY;
+    if (!key) return undefined;
+
+    // Handle escaped newlines (common in Vercel/env vars)
+    key = key.replace(/\\n/g, "\n");
+
+    // Remove surrounding quotes if present
+    key = key.replace(/^"|"$/g, "");
+
+    // Ensure it looks like a PEM key
+    if (!key.includes("-----BEGIN PRIVATE KEY-----")) {
+        console.error("GOOGLE_SHEETS_PRIVATE_KEY missing PEM header");
+    }
+
+    return key;
+})();
+
 const SPREADSHEET_ID = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
 
 if (!GOOGLE_SHEETS_CLIENT_EMAIL || !GOOGLE_SHEETS_PRIVATE_KEY || !SPREADSHEET_ID) {
-    console.warn("Google Sheets credentials are not fully set.");
+    console.error("Google Sheets credentials are missing or incomplete.");
+    console.error("Email:", !!GOOGLE_SHEETS_CLIENT_EMAIL);
+    console.error("Key:", !!GOOGLE_SHEETS_PRIVATE_KEY, "Length:", GOOGLE_SHEETS_PRIVATE_KEY?.length);
+    console.error("Spreadsheet ID:", !!SPREADSHEET_ID);
 }
 
 const auth = new google.auth.GoogleAuth({

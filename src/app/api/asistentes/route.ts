@@ -36,9 +36,13 @@ export async function GET(req: NextRequest) {
             return NextResponse.json(filtered);
         }
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("GET Asistentes Error:", error);
-        return NextResponse.json({ error: "Error fetching data" }, { status: 500 });
+        return NextResponse.json({
+            error: "Error fetching data",
+            details: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined
+        }, { status: 500 });
     }
 }
 
@@ -119,8 +123,12 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({ success: true, id: newId });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("POST Asistentes Error:", error);
-        return NextResponse.json({ error: "Error saving data" }, { status: 500 });
+        return NextResponse.json({
+            error: "Error saving data",
+            details: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined
+        }, { status: 500 });
     }
 }
