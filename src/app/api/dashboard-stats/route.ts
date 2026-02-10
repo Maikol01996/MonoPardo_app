@@ -10,11 +10,39 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
+        // Module 1: Event Registration (Cierre de Campaña) - Real Time
+        const asistentes = await getAllAsistentes();
+
+        // 1. Total Registrations
+        const totalRegistros = asistentes.length;
+
+        // 2. Breakdown by Barrio (Localidad)
+        const barriosMap = new Map<string, number>();
+        asistentes.forEach(a => {
+            const barrio = (a.localidad || "Sin Barrio").trim(); // Using Localidad as Barrio based on user request context or previous knowledge
+            barriosMap.set(barrio, (barriosMap.get(barrio) || 0) + 1);
+        });
+        const registrosPorBarrio = Array.from(barriosMap.entries())
+            .map(([name, value]) => ({ name, value }))
+            .sort((a, b) => b.value - a.value);
+
+        // 3. Ranking Referrers
+        const referrerMap = new Map<string, number>();
+        asistentes.forEach(a => {
+            if (a.referenciado_por_nombre) {
+                const ref = a.referenciado_por_nombre.trim();
+                referrerMap.set(ref, (referrerMap.get(ref) || 0) + 1);
+            }
+        });
+        const rankingReferidos = Array.from(referrerMap.entries())
+            .map(([name, count]) => ({ name, count }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 10); // Top 10
+
+        // Module 2: Past Voters (Base Consulta)
         // Fetch Base Total (Source of Truth)
-        // We fetch "BOGOTA D.C." and "CUNDINAMARCA" or just EVERYTHING if manageable.
-        // Assuming the user wants to see the whole operation. 
-        // We'll filter empty rows if any.
         const baseTotal = await getBasesConsulta(1, 100000, "", false);
+
 
         // 1. Calculate Global Backlog (Pendientes)
         // Definition: Records with NO 'Estado Llamada' AND NO 'Estado WhatsApp'
@@ -98,12 +126,21 @@ export async function GET(req: NextRequest) {
             // Since I can't filter by 'Gestionado Por' without the mapping, I must fix googleSheets.ts first.
         }
 
-        // TEMPORARY RETURN until I fix mapping
         return NextResponse.json({
-            pendientes,
-            atendidos,
-            timeline: timelineData,
-            total
+            // Event Stats
+            eventStats: {
+                totalRegistros,
+                registrosPorBarrio,
+                rankingReferidos
+            },
+            // Legacy / Voter Stats
+            voterStats: {
+                pendientes,
+                atendidos,
+                timeline: timelineData,
+                total: baseTotal.length,
+                atendidosList: session.rol === Roles.ADMIN ? [] : [] // Optimize: don't send list on main dash if heavy
+            }
         });
 
     } catch (e) {

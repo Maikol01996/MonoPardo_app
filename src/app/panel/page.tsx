@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/core";
-import { Loader2, Users, CheckCircle, Phone, MessageCircle } from "lucide-react";
+import { Loader2, Users, CheckCircle, Phone, MessageCircle, MapPin, Trophy, LayoutDashboard, Database } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 export default function DashboardPage() {
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState<any>(null);
     const [userRole, setUserRole] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState<'evento' | 'votantes'>('evento');
 
     useEffect(() => {
         fetchData();
@@ -41,128 +42,192 @@ export default function DashboardPage() {
     };
 
     if (loading) {
-        return <div className="p-8 flex items-center justify-center"><Loader2 className="animate-spin" /> Cargando estadísticas...</div>;
+        return <div className="p-8 flex items-center justify-center min-h-[50vh]"><Loader2 className="animate-spin mr-2" /> Cargando estadísticas...</div>;
     }
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500">
-            <h1 className="text-3xl font-bold tracking-tight">Mi Gestión</h1>
+        <div className="space-y-6 animate-in fade-in duration-500 pb-10">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <h1 className="text-3xl font-bold tracking-tight text-gray-900">Panel de Control</h1>
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Pendientes (Base)</CardTitle>
-                        <Phone className="h-4 w-4 text-orange-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats?.pendientes || 0}</div>
-                        <p className="text-xs text-muted-foreground">Registros sin gestionar</p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Atendidos</CardTitle>
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats?.atendidos || 0}</div>
-                        <p className="text-xs text-muted-foreground">{userRole === 'ADMIN' ? 'Global' : 'Mis gestiones'}</p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Llamadas Realizadas</CardTitle>
-                        <Phone className="h-4 w-4 text-blue-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats?.llamadas || 0}</div>
-                        <p className="text-xs text-muted-foreground">Intentos de contacto</p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">WhatsApp Enviados</CardTitle>
-                        <MessageCircle className="h-4 w-4 text-green-600" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats?.whatsapp || 0}</div>
-                        <p className="text-xs text-muted-foreground">Mensajes enviados</p>
-                    </CardContent>
-                </Card>
+                {/* Mobile-friendly Tab Switcher */}
+                <div className="flex bg-gray-100 p-1 rounded-lg self-start md:self-auto w-full md:w-auto">
+                    <button
+                        onClick={() => setActiveTab('evento')}
+                        className={`flex-1 md:flex-none px-4 py-2 text-sm font-medium rounded-md transition-all flex items-center justify-center gap-2 ${activeTab === 'evento'
+                                ? 'bg-white text-red-600 shadow-sm'
+                                : 'text-gray-500 hover:text-gray-900'
+                            }`}
+                    >
+                        <LayoutDashboard className="h-4 w-4" />
+                        Cierre de Campaña
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('votantes')}
+                        className={`flex-1 md:flex-none px-4 py-2 text-sm font-medium rounded-md transition-all flex items-center justify-center gap-2 ${activeTab === 'votantes'
+                                ? 'bg-white text-blue-600 shadow-sm'
+                                : 'text-gray-500 hover:text-gray-900'
+                            }`}
+                    >
+                        <Database className="h-4 w-4" />
+                        Base Votantes (Camilo)
+                    </button>
+                </div>
             </div>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Historial de Atenciones</CardTitle>
-                </CardHeader>
-                <CardContent className="h-[400px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={stats?.timeline || []}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis
-                                dataKey="date"
-                                tickFormatter={(value) => new Date(value).toLocaleDateString()}
-                            />
-                            <YAxis allowDecimals={false} />
-                            <Tooltip
-                                labelFormatter={(value) => new Date(value).toLocaleDateString()}
-                            />
-                            <Bar dataKey="count" name="Atenciones" fill="#16a34a" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                    </ResponsiveContainer>
-                </CardContent>
-            </Card>
+            {/* MODULE 1: EVENTO CIERRE CAMPAÑA */}
+            {activeTab === 'evento' && stats?.eventStats && (
+                <div className="space-y-6">
+                    {/* Big Metric */}
+                    <Card className="border-l-4 border-l-red-500 shadow-md">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium text-gray-500">Total Registrados (En Tiempo Real)</CardTitle>
+                            <Users className="h-4 w-4 text-red-500" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-4xl font-extrabold text-gray-900">{stats.eventStats.totalRegistros}</div>
+                            <p className="text-xs text-muted-foreground mt-1">Asistentes confirmados al evento</p>
+                        </CardContent>
+                    </Card>
 
-            {/* Table of Attended Records */}
-            {stats?.atendidosList && stats.atendidosList.length > 0 && (
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Detalle de Gestionados ({stats.atendidosList.length})</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="relative w-full overflow-auto">
-                            <table className="w-full caption-bottom text-sm text-left">
-                                <thead className="[&_tr]:border-b">
-                                    <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
-                                        <th className="h-12 px-4 align-middle font-medium text-muted-foreground">Cédula</th>
-                                        <th className="h-12 px-4 align-middle font-medium text-muted-foreground">Nombre</th>
-                                        <th className="h-12 px-4 align-middle font-medium text-muted-foreground">Teléfono</th>
-                                        <th className="h-12 px-4 align-middle font-medium text-muted-foreground">Estado Llamada</th>
-                                        <th className="h-12 px-4 align-middle font-medium text-muted-foreground">Estado WhatsApp</th>
-                                        <th className="h-12 px-4 align-middle font-medium text-muted-foreground">Fecha</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="[&_tr:last-child]:border-0">
-                                    {stats.atendidosList.map((item: any, i: number) => (
-                                        <tr key={i} className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
-                                            <td className="p-4 align-middle font-medium">{item.cedula}</td>
-                                            <td className="p-4 align-middle">{item.nombre_completo}</td>
-                                            <td className="p-4 align-middle">{item.celular || "N/A"}</td>
-                                            <td className="p-4 align-middle">
-                                                {item.estado_llamada ? (
-                                                    <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-blue-50 text-blue-900 border-blue-200">
-                                                        {item.estado_llamada}
-                                                    </span>
-                                                ) : "-"}
-                                            </td>
-                                            <td className="p-4 align-middle">
-                                                {item.estado_whatsapp ? (
-                                                    <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-green-50 text-green-900 border-green-200">
-                                                        {item.estado_whatsapp}
-                                                    </span>
-                                                ) : "-"}
-                                            </td>
-                                            <td className="p-4 align-middle text-muted-foreground">{item.fecha_gestion}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </CardContent>
-                </Card>
+                    <div className="grid gap-6 md:grid-cols-2">
+                        {/* Breakdown by Barrio */}
+                        <Card className="shadow-md h-full">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-lg">
+                                    <MapPin className="h-5 w-5 text-gray-500" />
+                                    Registros por Localidad
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="h-[300px] w-full overflow-y-auto pr-2">
+                                    <div className="space-y-4">
+                                        {stats.eventStats.registrosPorBarrio.map((item: any, i: number) => (
+                                            <div key={i} className="flex items-center">
+                                                <div className="w-full">
+                                                    <div className="flex justify-between mb-1">
+                                                        <span className="text-sm font-medium text-gray-700">{item.name || "Sin dato"}</span>
+                                                        <span className="text-sm font-bold text-gray-900">{item.value}</span>
+                                                    </div>
+                                                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                                                        <div
+                                                            className="bg-red-500 h-2.5 rounded-full transition-all duration-500"
+                                                            style={{ width: `${Math.min((item.value / stats.eventStats.totalRegistros) * 100 * 1.5, 100)}%` }} // Scaled visually
+                                                        ></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Top Referrers */}
+                        <Card className="shadow-md h-full">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-lg">
+                                    <Trophy className="h-5 w-5 text-yellow-500" />
+                                    Top Referenciadores (Ranking)
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="h-[300px] w-full overflow-y-auto pr-2">
+                                    <table className="w-full text-sm text-left">
+                                        <thead className="text-xs text-gray-700 uppercase bg-gray-50 sticky top-0">
+                                            <tr>
+                                                <th className="px-4 py-3 rounded-tl-lg">#</th>
+                                                <th className="px-4 py-3">Referente</th>
+                                                <th className="px-4 py-3 text-right rounded-tr-lg">Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {stats.eventStats.rankingReferidos.map((item: any, i: number) => (
+                                                <tr key={i} className="bg-white border-b hover:bg-gray-50">
+                                                    <td className="px-4 py-3 font-medium text-gray-900">
+                                                        {i + 1}
+                                                        {i < 3 && <span className="ml-1">👑</span>}
+                                                    </td>
+                                                    <td className="px-4 py-3 font-medium text-gray-700">{item.name}</td>
+                                                    <td className="px-4 py-3 text-right font-bold text-blue-600">{item.count}</td>
+                                                </tr>
+                                            ))}
+                                            {stats.eventStats.rankingReferidos.length === 0 && (
+                                                <tr>
+                                                    <td colSpan={3} className="text-center py-4 text-gray-500">No hay datos de referidos aún</td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </div>
+            )}
+
+            {/* MODULE 2: BASE VOTANTES */}
+            {activeTab === 'votantes' && stats?.voterStats && (
+                <div className="space-y-6">
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        <Card className="border-l-4 border-l-blue-500 shadow-sm">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Total Base Votantes</CardTitle>
+                                <Users className="h-4 w-4 text-blue-500" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{stats.voterStats.total}</div>
+                                <p className="text-xs text-muted-foreground">Histórico Elecciones Pasadas</p>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="shadow-sm">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Total Pendientes</CardTitle>
+                                <Phone className="h-4 w-4 text-orange-500" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{stats.voterStats.pendientes}</div>
+                                <p className="text-xs text-muted-foreground">Por gestionar hoy</p>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="shadow-sm">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Gestionados (Atendidos)</CardTitle>
+                                <CheckCircle className="h-4 w-4 text-green-500" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{stats.voterStats.atendidos}</div>
+                                <p className="text-xs text-muted-foreground">Contactados exitosamente</p>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    <Card className="shadow-sm">
+                        <CardHeader>
+                            <CardTitle>Historial de Atenciones (Equipo)</CardTitle>
+                        </CardHeader>
+                        <CardContent className="h-[300px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={stats.voterStats.timeline || []}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                    <XAxis
+                                        dataKey="date"
+                                        tickFormatter={(value) => new Date(value).toLocaleDateString()}
+                                        tick={{ fontSize: 12 }}
+                                    />
+                                    <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                                    <Tooltip
+                                        labelFormatter={(value) => new Date(value).toLocaleDateString()}
+                                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                    />
+                                    <Bar dataKey="count" name="Atenciones" fill="#2563eb" radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </CardContent>
+                    </Card>
+                </div>
             )}
         </div>
     );
